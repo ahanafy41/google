@@ -504,6 +504,8 @@
         <div id="screenPreview" class="screen-preview"></div>
         <div class="text-input-container">
             <input type="text" id="messageInput" placeholder="اكتب رسالتك..." class="text-input">
+            <input type="file" id="imageInput" accept="image/*" style="display: none;">
+            <button id="imageUploadBtn" class="send-btn" aria-label="رفع صورة">🖼️</button>
             <button id="sendBtn" class="send-btn" aria-label="إرسال الرسالة">➤</button>
         </div>
     </div>
@@ -755,6 +757,8 @@
             // Text input elements
             messageInput: document.getElementById('messageInput'),
             sendBtn: document.getElementById('sendBtn'),
+            imageUploadBtn: document.getElementById('imageUploadBtn'),
+            imageInput: document.getElementById('imageInput'),
 
             // Visualizer canvas
             visualizerCanvas: document.getElementById('visualizer'),
@@ -1931,7 +1935,7 @@
             constructor() {
                 this.chatContainer = document.getElementById('chatHistory');
                 this.currentStreamingMessage = null;
-                this.lastUserMessageType = null; // 'text' or 'audio'
+                this.lastUserMessageType = null; // 'text' or 'audio' or 'image'
                 this.currentTranscript = ''; // Add this to store accumulated transcript
             }
 
@@ -1950,6 +1954,21 @@
                 messageDiv.textContent = 'User sent audio';
                 this.chatContainer.appendChild(messageDiv);
                 this.lastUserMessageType = 'audio';
+                this.scrollToBottom();
+            }
+
+            addUserImageMessage(base64Image) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = 'chat-message user-message';
+                const imgElement = document.createElement('img');
+                imgElement.src = `data:image/jpeg;base64,${base64Image}`;
+                imgElement.alt = 'User sent image';
+                imgElement.style.maxWidth = '100%';
+                imgElement.style.borderRadius = '8px';
+                imgElement.style.marginTop = '5px';
+                this.chatContainer.appendChild(messageDiv);
+                messageDiv.appendChild(imgElement);
+                this.lastUserMessageType = 'image';
                 this.scrollToBottom();
             }
 
@@ -2359,7 +2378,7 @@
              * @param {Object} functionCall - Function call specification
              */
             async handleToolCall(functionCall) {
-                const {
+                const {n
                     name,
                     args,
                     id
@@ -2594,7 +2613,7 @@
                             role: 'user',
                             parts: {
                                 text: text
-                            } // TODO: Should it be in the list or not?
+                            }
                         }],
                         turnComplete: endOfTurn
                     }
@@ -3249,6 +3268,30 @@
                 if (event.key === 'Enter') {
                     event.preventDefault();
                     sendMessage();
+                }
+            });
+
+            // Image upload handlers
+            elements.imageUploadBtn.addEventListener('click', () => {
+                elements.imageInput.click(); // Trigger the hidden file input
+            });
+
+            elements.imageInput.addEventListener('change', async (event) => {
+                const file = event.target.files[0];
+                if (file) {
+                    try {
+                        await ensureAgentReady(agent);
+                        const reader = new FileReader();
+                        reader.onload = async (e) => {
+                            const base64Image = e.target.result.split(',')[1]; // Get base64 part
+                            chatManager.addUserImageMessage(base64Image);
+                            await agent.sendImage(base64Image);
+                            elements.imageInput.value = ''; // Clear the input so same file can be selected again
+                        };
+                        reader.readAsDataURL(file);
+                    } catch (error) {
+                        console.error('Error uploading image:', error);
+                    }
                 }
             });
 
