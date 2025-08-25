@@ -505,7 +505,7 @@
         <div class="text-input-container">
             <input type="text" id="messageInput" placeholder="اكتب رسالتك..." class="text-input">
             <input type="file" id="imageInput" accept="image/*" style="display: none;">
-            <button id="imageUploadBtn" class="send-btn" aria-label="رفع صورة">🖼️</button>
+            <button id="imageUploadBtn" class="send-btn" aria-label="رفع صورة" aria-hidden="false">🖼️</button>
             <button id="sendBtn" class="send-btn" aria-label="إرسال الرسالة">➤</button>
         </div>
     </div>
@@ -766,6 +766,9 @@
             // Screen reader announcer
             srAnnouncer: document.getElementById('sr-announcer'),
         };
+
+        // Add console log to check if imageUploadBtn is found
+        console.log('elements.imageUploadBtn:', elements.imageUploadBtn);
 
         // --- From js/settings/settings-template.js ---
         const settingsTemplate = `
@@ -1411,7 +1414,7 @@
                             this.checkInterval = window.setInterval(() => {
                                 if (this.audioQueue.length > 0 || this.processingBuffer.length >= this.bufferSize) {
                                     this.scheduleNextBuffer();
-                                }
+                                } И
                             }, 100);
                         }
                     } else {
@@ -3273,6 +3276,7 @@
 
             // Image upload handlers
             elements.imageUploadBtn.addEventListener('click', () => {
+                console.log('Image upload button clicked!'); // Added console log
                 elements.imageInput.click(); // Trigger the hidden file input
             });
 
