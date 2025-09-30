@@ -690,6 +690,47 @@
             return localStorage.getItem('tavilyApiKey') || '';
         };
 
+        const legacyVoices = {
+            "Puck": "Puck",
+            "Charon": "Charon",
+            "Kore": "Kore",
+            "Fenrir": "Fenrir",
+            "Aoede": "Aoede"
+        };
+
+        const newVoices = {
+            "Achernar": "Achernar (Female)",
+            "Achird": "Achird (Male)",
+            "Algenib": "Algenib (Male)",
+            "Algieba": "Algieba (Male)",
+            "Alnilam": "Alnilam (Male)",
+            "Aoede": "Aoede (Female)",
+            "Autonoe": "Autonoe (Female)",
+            "Callirrhoe": "Callirrhoe (Female)",
+            "Charon": "Charon (Male)",
+            "Despina": "Despina (Female)",
+            "Enceladus": "Enceladus (Male)",
+            "Erinome": "Erinome (Female)",
+            "Fenrir": "Fenrir (Male)",
+            "Gacrux": "Gacrux (Female)",
+            "Iapetus": "Iapetus (Male)",
+            "Kore": "Kore (Female)",
+            "Laomedeia": "Laomedeia (Female)",
+            "Leda": "Leda (Female)",
+            "Orus": "Orus (Male)",
+            "Pulcherrima": "Pulcherrima (Female)",
+            "Puck": "Puck (Male)",
+            "Rasalgethi": "Rasalgethi (Male)",
+            "Sadachbia": "Sadachbia (Male)",
+            "Sadaltager": "Sadaltager (Male)",
+            "Schedar": "Schedar (Male)",
+            "Sulafat": "Sulafat (Female)",
+            "Umbriel": "Umbriel (Male)",
+            "Vindemiatrix": "Vindemiatrix (Female)",
+            "Zephyr": "Zephyr (Female)",
+            "Zubenelgenubi": "Zubenelgenubi (Male)"
+        };
+
         // Audio Configurations
         const MODEL_SAMPLE_RATE = parseInt(localStorage.getItem('sampleRate')) || 27000;
 
@@ -701,7 +742,7 @@
         }
 
         const getConfig = () => ({
-            model: 'models/gemini-2.0-flash-exp',
+            model: localStorage.getItem('model') || 'models/gemini-2.5-flash-native-audio-preview-09-2025',
             generationConfig: {
                 temperature: parseFloat(localStorage.getItem('temperature')) || 1.8,
                 top_p: parseFloat(localStorage.getItem('top_p')) || 0.95,
@@ -785,13 +826,17 @@
             </div>
 
             <div class="settings-group">
+                <label for="model">Model</label>
+                <select id="model">
+                    <option value="models/gemini-2.5-flash-native-audio-preview-09-2025">Gemini 2.5 Flash (Latest)</option>
+                    <option value="models/gemini-2.0-flash-exp">Gemini 2.0 Flash (Legacy)</option>
+                </select>
+            </div>
+
+            <div class="settings-group">
                 <label for="voice">Voice</label>
                 <select id="voice">
-                    <option value="Puck">Puck</option>
-                    <option value="Charon">Charon</option>
-                    <option value="Kore">Kore</option>
-                    <option value="Fenrir">Fenrir</option>
-                    <option value="Aoede">Aoede</option>
+                    <!-- Options will be populated dynamically -->
                 </select>
             </div>
 
@@ -907,6 +952,7 @@
                     apiKeyInput: this.dialog.querySelector('#apiKey'),
                     deepgramApiKeyInput: this.dialog.querySelector('#deepgramApiKey'),
                     tavilyApiKeyInput: this.dialog.querySelector('#tavilyApiKey'),
+                    modelSelect: this.dialog.querySelector('#model'),
                     voiceSelect: this.dialog.querySelector('#voice'),
                     sampleRateInput: this.dialog.querySelector('#sampleRate'),
                     sampleRateValue: this.dialog.querySelector('#sampleRateValue'),
@@ -974,6 +1020,9 @@
                     this.toggleCollapsible(this.elements.safetyToggle, this.elements.safetyContent);
                 });
 
+                // Update voice options when model is changed
+                this.elements.modelSelect.addEventListener('change', () => this.updateVoiceOptions());
+
                 // Add input listeners for real-time value updates
                 const inputElements = [
                     'sampleRateInput', 'temperatureInput', 'topPInput', 'topKInput',
@@ -991,7 +1040,10 @@
                 this.elements.apiKeyInput.value = localStorage.getItem('apiKey') || '';
                 this.elements.deepgramApiKeyInput.value = localStorage.getItem('deepgramApiKey') || '';
                 this.elements.tavilyApiKeyInput.value = localStorage.getItem('tavilyApiKey') || '';
-                this.elements.voiceSelect.value = localStorage.getItem('voiceName') || 'Aoede';
+                this.elements.modelSelect.value = localStorage.getItem('model') || 'models/gemini-2.5-flash-native-audio-preview-09-2025';
+
+                // Populate and select the correct voice based on the loaded model
+                this.updateVoiceOptions();
                 this.elements.sampleRateInput.value = localStorage.getItem('sampleRate') || '27000';
                 this.elements.systemInstructionsInput.value = localStorage.getItem('systemInstructions') || 'You are a helpful assistant';
                 this.elements.temperatureInput.value = localStorage.getItem('temperature') || '1.8';
@@ -1016,6 +1068,7 @@
                 localStorage.setItem('apiKey', this.elements.apiKeyInput.value);
                 localStorage.setItem('deepgramApiKey', this.elements.deepgramApiKeyInput.value);
                 localStorage.setItem('tavilyApiKey', this.elements.tavilyApiKeyInput.value);
+                localStorage.setItem('model', this.elements.modelSelect.value);
                 localStorage.setItem('voiceName', this.elements.voiceSelect.value);
                 localStorage.setItem('sampleRate', this.elements.sampleRateInput.value);
                 localStorage.setItem('systemInstructions', this.elements.systemInstructionsInput.value);
@@ -1057,6 +1110,30 @@
                     '3': 'High'
                 };
                 return labels[value] || value;
+            }
+
+            updateVoiceOptions() {
+                const selectedModel = this.elements.modelSelect.value;
+                const voiceSelect = this.elements.voiceSelect;
+                const currentVoice = localStorage.getItem('voiceName') || 'Aoede';
+                voiceSelect.innerHTML = ''; // Clear existing options
+
+                const voices = selectedModel.includes('2.0') ? legacyVoices : newVoices;
+
+                for (const [value, text] of Object.entries(voices)) {
+                    const option = document.createElement('option');
+                    option.value = value;
+                    option.textContent = text;
+                    voiceSelect.appendChild(option);
+                }
+
+                // Try to re-select the currently saved voice if it exists in the new list
+                if (voices[currentVoice]) {
+                    voiceSelect.value = currentVoice;
+                } else {
+                    // If the saved voice isn't in the new list, default to the first one
+                    voiceSelect.selectedIndex = 0;
+                }
             }
 
             toggleCollapsible(toggle, content) {
@@ -2546,6 +2623,13 @@
                         reject(error);
                     });
 
+                    // Handle connection closure
+                    ws.addEventListener('close', () => {
+                        console.info('🔗 WebSocket connection closed.');
+                        this.disconnect();
+                        this.emit('disconnected');
+                    });
+
                     // Listen for incoming messages, expecting Blob data for binary streams
                     ws.addEventListener('message', async (event) => {
                         if (event.data instanceof Blob) {
@@ -2746,11 +2830,17 @@
              * * @param {Object} json - The JSON object to send.
              */
             async sendJSON(json) {
-                try {
-                    this.ws.send(JSON.stringify(json));
-                    // console.debug(`JSON Object was sent to ${this.name}:`, json);
-                } catch (error) {
-                    throw new Error(`Failed to send ${json} to ${this.name}:` + error);
+                if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+                    try {
+                        this.ws.send(JSON.stringify(json));
+                        // console.debug(`JSON Object was sent to ${this.name}:`, json);
+                    } catch (error) {
+                        console.error(`Failed to send JSON to ${this.name}:`, error);
+                        // We throw the error so the caller can handle it if needed
+                        throw new Error(`Failed to send ${json} to ${this.name}:` + error);
+                    }
+                } else {
+                    console.warn(`WebSocket not open. State: ${this.ws?.readyState}. Could not send JSON to ${this.name}.`, json);
                 }
             }
         }
@@ -2863,6 +2953,12 @@
 
                 this.client.on('tool_call', async (toolCall) => {
                     await this.handleToolCall(toolCall);
+                });
+
+                // Handle disconnection from the client
+                this.client.on('disconnected', () => {
+                    this.connected = false;
+                    this.emit('disconnected');
                 });
             }
 
@@ -3387,6 +3483,14 @@
 
         geminiAgent.on('turn_complete', () => {
             chatManager.finalizeStreamingMessage();
+        });
+
+        // Handle disconnection events to update the UI
+        geminiAgent.on('disconnected', () => {
+            showConnectButton();
+            // Also update button states
+            [elements.cameraBtn, elements.screenBtn, elements.micBtn].forEach(btn => btn.classList.remove('active'));
+            isCameraActive = false; // This variable is defined in the events section, assuming it's accessible
         });
 
         geminiAgent.connect();
