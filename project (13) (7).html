@@ -792,11 +792,36 @@
             <div class="settings-group">
                 <label for="voice">Voice</label>
                 <select id="voice">
-                    <option value="Puck">Puck</option>
-                    <option value="Charon">Charon</option>
-                    <option value="Kore">Kore</option>
-                    <option value="Fenrir">Fenrir</option>
+                    <option value="Achernar">Achernar</option>
+                    <option value="Achird">Achird</option>
+                    <option value="Algenib">Algenib</option>
+                    <option value="Algieba">Algieba</option>
+                    <option value="Alnilam">Alnilam</option>
                     <option value="Aoede">Aoede</option>
+                    <option value="Autonoe">Autonoe</option>
+                    <option value="Callirrhoe">Callirrhoe</option>
+                    <option value="Charon">Charon</option>
+                    <option value="Despina">Despina</option>
+                    <option value="Enceladus">Enceladus</option>
+                    <option value="Erinome">Erinome</option>
+                    <option value="Fenrir">Fenrir</option>
+                    <option value="Gacrux">Gacrux</option>
+                    <option value="Iapetus">Iapetus</option>
+                    <option value="Kore">Kore</option>
+                    <option value="Laomedeia">Laomedeia</option>
+                    <option value="Leda">Leda</option>
+                    <option value="Orus">Orus</option>
+                    <option value="Puck">Puck</option>
+                    <option value="Pulcherrima">Pulcherrima</option>
+                    <option value="Rasalgethi">Rasalgethi</option>
+                    <option value="Sadachbia">Sadachbia</option>
+                    <option value="Sadaltager">Sadaltager</option>
+                    <option value="Schedar">Schedar</option>
+                    <option value="Sulafat">Sulafat</option>
+                    <option value="Umbriel">Umbriel</option>
+                    <option value="Vindemiatrix">Vindemiatrix</option>
+                    <option value="Zephyr">Zephyr</option>
+                    <option value="Zubenelgenubi">Zubenelgenubi</option>
                 </select>
             </div>
 
@@ -1000,7 +1025,24 @@
                 this.elements.wikipediaEnabledInput.checked = localStorage.getItem('wikipediaEnabled') === 'true';
                 this.elements.voiceSelect.value = localStorage.getItem('voiceName') || 'Aoede';
                 this.elements.sampleRateInput.value = localStorage.getItem('sampleRate') || '27000';
-                this.elements.systemInstructionsInput.value = localStorage.getItem('systemInstructions') || 'You are a helpful assistant';
+                this.elements.systemInstructionsInput.value = localStorage.getItem('systemInstructions') || `You are an advanced AI assistant with a very important mission: to act as the eyes and research partner for a visually impaired user. Your two primary responsibilities are providing visual assistance and conducting expert research. You are always aware of the current date. When the user asks a question related to time or scheduling, use today's date as your reference point.
+
+**Core Mission: Accessibility Assistant**
+
+This is your most important role. Always be mindful that your user cannot see.
+
+*   **Describe Everything:** Proactively and descriptively explain what you see through the camera. Describe objects, people, colors, and the general environment. Be detailed in your descriptions.
+*   **Prioritize Reading Text:** When the user presents text to the camera, reading it aloud clearly and accurately is your highest priority.
+*   **Be Thorough with Long Content:** Never be 'lazy' or refuse to read long texts, articles, or web pages. When asked to read, you must read the content completely. Do not summarize unless the user specifically asks you to.
+*   **Identify Products and Brands:** When you see a product, do your best to read its name and brand.
+*   **Be Proactive:** If you identify a product or object and you think the user might want more information about it, you should proactively offer to search for it using your \`tavilySearch\` tool.
+
+**Tool Usage Instructions**
+
+To support your mission, you must use your tools efficiently.
+
+*   **For \`wikipediaSearch\`:** Follow the mandatory two-step process: (1) First, use \`action: 'search'\` to find the exact article title. (2) Second, use \`action: 'getSummary'\` with that exact title.
+*   **For \`tavilySearch\`:** Use this tool for current events or general web knowledge. Be specific in your search query to get the most relevant results and synthesize a direct, helpful answer.`;
                 this.elements.temperatureInput.value = localStorage.getItem('temperature') || '1.8';
                 this.elements.topPInput.value = localStorage.getItem('top_p') || '0.95';
                 this.elements.topKInput.value = localStorage.getItem('top_k') || '65';
