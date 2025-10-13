@@ -690,6 +690,10 @@
             return localStorage.getItem('tavilyApiKey') || '';
         };
 
+        const getGoogleApiKey = () => {
+            return localStorage.getItem('googleApiKey') || '';
+        };
+
         const legacyVoices = {
             "Puck": "Puck",
             "Charon": "Charon",
@@ -758,7 +762,7 @@
             },
             systemInstruction: {
                 parts: [{
-                    text: localStorage.getItem('systemInstructions') || "You are a helpful assistant"
+                    text: localStorage.getItem('systemInstructions') || "You are an intelligent assistant. When you use search tools, do not list the results. Instead, analyze the information and provide a comprehensive, concise answer to the user as if you knew the answer already."
                 }]
             },
             tools: {
@@ -823,6 +827,11 @@
             <div class="settings-group">
                 <label for="tavilyApiKey">Tavily API Key (Optional)</label>
                 <input type="password" id="tavilyApiKey" placeholder="Enter your Tavily API key">
+            </div>
+
+            <div class="settings-group">
+                <label for="googleApiKey">Google API Key (Optional)</label>
+                <input type="password" id="googleApiKey" placeholder="Enter your Google API key">
             </div>
 
             <div class="settings-group">
@@ -952,6 +961,7 @@
                     apiKeyInput: this.dialog.querySelector('#apiKey'),
                     deepgramApiKeyInput: this.dialog.querySelector('#deepgramApiKey'),
                     tavilyApiKeyInput: this.dialog.querySelector('#tavilyApiKey'),
+                    googleApiKeyInput: this.dialog.querySelector('#googleApiKey'),
                     modelSelect: this.dialog.querySelector('#model'),
                     voiceSelect: this.dialog.querySelector('#voice'),
                     sampleRateInput: this.dialog.querySelector('#sampleRate'),
@@ -1040,12 +1050,13 @@
                 this.elements.apiKeyInput.value = localStorage.getItem('apiKey') || '';
                 this.elements.deepgramApiKeyInput.value = localStorage.getItem('deepgramApiKey') || '';
                 this.elements.tavilyApiKeyInput.value = localStorage.getItem('tavilyApiKey') || '';
+                this.elements.googleApiKeyInput.value = localStorage.getItem('googleApiKey') || '';
                 this.elements.modelSelect.value = localStorage.getItem('model') || 'models/gemini-2.5-flash-native-audio-preview-09-2025';
 
                 // Populate and select the correct voice based on the loaded model
                 this.updateVoiceOptions();
                 this.elements.sampleRateInput.value = localStorage.getItem('sampleRate') || '27000';
-                this.elements.systemInstructionsInput.value = localStorage.getItem('systemInstructions') || 'You are a helpful assistant';
+                this.elements.systemInstructionsInput.value = localStorage.getItem('systemInstructions') || "You are an intelligent assistant. When you use search tools, do not list the results. Instead, analyze the information and provide a comprehensive, concise answer to the user as if you knew the answer already.";
                 this.elements.temperatureInput.value = localStorage.getItem('temperature') || '1.8';
                 this.elements.topPInput.value = localStorage.getItem('top_p') || '0.95';
                 this.elements.topKInput.value = localStorage.getItem('top_k') || '65';
@@ -1068,6 +1079,7 @@
                 localStorage.setItem('apiKey', this.elements.apiKeyInput.value);
                 localStorage.setItem('deepgramApiKey', this.elements.deepgramApiKeyInput.value);
                 localStorage.setItem('tavilyApiKey', this.elements.tavilyApiKeyInput.value);
+                localStorage.setItem('googleApiKey', this.elements.googleApiKeyInput.value);
                 localStorage.setItem('model', this.elements.modelSelect.value);
                 localStorage.setItem('voiceName', this.elements.voiceSelect.value);
                 localStorage.setItem('sampleRate', this.elements.sampleRateInput.value);
@@ -2479,6 +2491,94 @@
             }
         }
 
+        // --- From js/tools/google-search.js ---
+        class GoogleSearchTool {
+            constructor() {
+                this.apiKey = getGoogleApiKey();
+                this.cx = '0723d1fec77844e3e'; // Hardcoded as requested
+                if (!this.apiKey) {
+                    console.warn("Google API key is not set. The search tool will not work.");
+                }
+            }
+
+            getDeclaration() {
+                return {
+                    name: 'googleSearch',
+                    description: 'Performs a web search using the Google Custom Search API. If the query is not in English, translate it to English first. The query should be optimized for recent results.',
+                    parameters: {
+                        type: 'OBJECT',
+                        properties: {
+                            query: {
+                                type: 'STRING',
+                                description: 'The search query to look up, in English.'
+                            }
+                        },
+                        required: ['query']
+                    }
+                };
+            }
+
+            async execute(args) {
+                if (!this.apiKey) {
+                    return {
+                        error: "Google API key is not configured."
+                    };
+                }
+                if (!this.cx) {
+                    return {
+                        error: "Google Search Engine ID (cx) is not configured."
+                    };
+                }
+
+                const {
+                    query
+                } = args;
+                if (!query) {
+                    return {
+                        error: "Search query is required."
+                    };
+                }
+
+                console.info(`Performing Google search for: "${query}"`);
+
+                const url = `https://www.googleapis.com/customsearch/v1?key=${this.apiKey}&cx=${this.cx}&q=${encodeURIComponent(query)}&sort=date:d:s`;
+
+                try {
+                    const response = await fetch(url);
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        console.error('Google Search API error:', errorData);
+                        throw new Error(`Google Search API request failed with status ${response.status}: ${errorData.error.message || response.statusText}`);
+                    }
+
+                    const data = await response.json();
+                    console.debug('Google Search API response:', data);
+
+                    if (data.items && data.items.length > 0) {
+                        const formattedResults = data.items.map(item => ({
+                            title: item.title,
+                            snippet: item.snippet,
+                            link: item.link
+                        }));
+                        return {
+                            results: JSON.stringify(formattedResults, null, 2)
+                        };
+                    } else {
+                        return {
+                            summary: "No results found."
+                        };
+                    }
+
+                } catch (error) {
+                    console.error('Error executing Google search:', error);
+                    return {
+                        error: error.message
+                    };
+                }
+            }
+        }
+
 
         // --- From js/tools/tool-manager.js ---
         /**
@@ -3453,6 +3553,7 @@
 
         const toolManager = new ToolManager();
         toolManager.registerTool('tavilySearch', new TavilySearchTool());
+        toolManager.registerTool('googleSearch', new GoogleSearchTool());
 
         const chatManager = new ChatManager();
 
